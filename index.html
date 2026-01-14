@@ -3,148 +3,170 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>員工管理系統 - 儀表板</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>員工管理系統</title>
+    <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="/manifest.json">
     <link rel="icon" href="/icons/favicon.ico">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 </head>
 <body>
-    <div class="dashboard-container">
-        <!-- 頂部導航 -->
-        <header class="dashboard-header">
-            <h1>員工管理系統</h1>
-            <div class="user-menu">
-                <span id="userName">載入中...</span>
-                <button id="logoutBtn">登出</button>
+    <!-- 登入頁面 -->
+    <div id="loginPage" class="page active">
+        <div class="login-container">
+            <div class="app-logo">
+                <i class="fas fa-users"></i>
+                <h1>員工管理系統</h1>
+                <p class="subtitle">員工權限管理平台</p>
             </div>
-        </header>
-
-        <!-- 主要內容 -->
-        <main class="dashboard-main">
-            <!-- 左側邊欄 -->
-            <aside class="dashboard-sidebar">
-                <nav class="main-nav">
-                    <h3>儀表板</h3>
-                    <ul>
-                        <li><a href="#dashboard" class="active">📊 儀表板</a></li>
-                        <li><a href="#profile">👤 個人資料</a></li>
-                        <li><a href="#attendance">📅 出勤記錄</a></li>
-                        <li><a href="#settings">⚙️ 設定</a></li>
-                    </ul>
-                </nav>
-
-                <div class="employee-card" id="employeeInfo">
-                    <h3>載入中...</h3>
-                    <p>員工編號：...</p>
-                    <!-- 動態載入 -->
+            
+            <form class="login-form" id="loginForm">
+                <div class="input-group">
+                    <i class="fas fa-id-card"></i>
+                    <input type="text" id="employeeId" placeholder="員工編號" required>
                 </div>
-            </aside>
-
-            <!-- 中間主要內容 -->
-            <section class="dashboard-content">
-                <!-- 歡迎區塊 -->
-                <div class="welcome-card">
-                    <div class="welcome-message">
-                        <h2>歡迎回來！</h2>
-                        <p id="welcomeText">載入中...</p>
-                    </div>
-                    <div class="date-display" id="currentDate">
-                        <!-- 動態載入日期 -->
-                    </div>
+                
+                <div class="input-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="password" placeholder="密碼" required>
+                    <button type="button" class="toggle-password">
+                        <i class="fas fa-eye"></i>
+                    </button>
                 </div>
-
-                <!-- 快速操作區 -->
-                <div class="quick-actions">
-                    <h3>快速操作</h3>
-                    <div class="action-buttons">
-                        <button class="action-btn clock-in" id="clockInBtn">
-                            🕐 上班打卡
-                        </button>
-                        <button class="action-btn clock-out" id="clockOutBtn">
-                            🕐 下班打卡
-                        </button>
-                        <button class="action-btn leave" id="leaveBtn">
-                            📝 請假申請
-                        </button>
-                        <button class="action-btn report" id="reportBtn">
-                            🚨 問題回報
-                        </button>
-                    </div>
+                
+                <div class="login-options">
+                    <label class="remember-me">
+                        <input type="checkbox" id="rememberMe">
+                        <span>記住我</span>
+                    </label>
+                    <a href="#" id="forgotPassword">忘記密碼？</a>
                 </div>
-
-                <!-- 儀表板區塊 -->
-                <div class="dashboard-grid">
-                    <!-- 在職員工 -->
-                    <div class="card">
-                        <h3>👥 在職員工</h3>
-                        <div class="employee-count" id="employeeCount">
-                            <span>載入中...</span>
-                        </div>
-                        <button class="card-action" id="viewEmployeesBtn">
-                            查看全部 →
-                        </button>
-                    </div>
-
-                    <!-- 今日出勤 -->
-                    <div class="card">
-                        <h3>📊 今日出勤</h3>
-                        <div class="attendance-today" id="attendanceToday">
-                            <span>載入中...</span>
-                        </div>
-                        <button class="card-action" id="viewAttendanceBtn">
-                            查看記錄 →
-                        </button>
-                    </div>
-
-                    <!-- 進行中專案 -->
-                    <div class="card">
-                        <h3>🚀 進行中專案</h3>
-                        <div class="active-projects" id="activeProjects">
-                            <span>載入中...</span>
-                        </div>
-                        <button class="card-action" id="viewProjectsBtn">
-                            查看專案 →
-                        </button>
-                    </div>
-
-                    <!-- 待辦事項 -->
-                    <div class="card todo-card">
-                        <h3>✅ 待辦事項</h3>
-                        <ul id="todoList">
-                            <li>載入中...</li>
-                        </ul>
-                        <button class="card-action" id="addTodoBtn">
-                            新增事項
-                        </button>
-                    </div>
-                </div>
-
-                <!-- 最近活動 -->
-                <div class="recent-activity">
-                    <h3>📝 最近活動</h3>
-                    <ul id="activityList">
-                        <li>您已登入系統 - 剛剛</li>
-                        <!-- 動態載入 -->
-                    </ul>
-                </div>
-            </section>
-        </main>
-
-        <!-- 底部 -->
-        <footer class="dashboard-footer">
-            <p>© 2026 員工管理系統 | v1.0.0</p>
-        </footer>
+                
+                <button type="submit" class="btn-primary">
+                    <i class="fas fa-sign-in-alt"></i>
+                    登入
+                </button>
+            </form>
+            
+            <div class="version">v1.0.0</div>
+        </div>
     </div>
-
+    
+    <!-- 儀表板頁面 -->
+    <div id="dashboardPage" class="page">
+        <header class="app-header">
+            <button class="menu-toggle" id="menuToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="page-title" id="pageTitle">儀表板</div>
+            <button class="profile-btn">
+                <i class="fas fa-user"></i>
+            </button>
+        </header>
+        
+        <aside class="sidebar" id="sidebar">
+            <div class="user-profile">
+                <div class="avatar">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <div class="user-info">
+                    <h3 id="userName">載入中...</h3>
+                    <p id="userRole">員工編號: ...</p>
+                </div>
+            </div>
+            
+            <ul class="menu">
+                <li class="active" data-page="dashboard">
+                    <a href="#">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>儀表板</span>
+                    </a>
+                </li>
+                <li data-page="profile">
+                    <a href="#">
+                        <i class="fas fa-user"></i>
+                        <span>個人資料</span>
+                    </a>
+                </li>
+                <li data-page="attendance">
+                    <a href="#">
+                        <i class="fas fa-calendar-check"></i>
+                        <span>出勤記錄</span>
+                    </a>
+                </li>
+                <li data-page="projects" class="requires-manager">
+                    <a href="#">
+                        <i class="fas fa-project-diagram"></i>
+                        <span>專案管理</span>
+                    </a>
+                </li>
+                <li data-page="finance" class="requires-finance">
+                    <a href="#">
+                        <i class="fas fa-chart-line"></i>
+                        <span>財務報表</span>
+                    </a>
+                </li>
+                <li data-page="employees" class="requires-admin">
+                    <a href="#">
+                        <i class="fas fa-users-cog"></i>
+                        <span>員工管理</span>
+                    </a>
+                </li>
+                <li data-page="settings">
+                    <a href="#">
+                        <i class="fas fa-cog"></i>
+                        <span>設定</span>
+                    </a>
+                </li>
+            </ul>
+            
+            <button class="logout-btn" id="logoutBtn">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>登出</span>
+            </button>
+        </aside>
+        
+        <main class="main-content" id="mainContent">
+            <!-- 動態載入內容 -->
+            <div class="loading">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>載入中...</p>
+            </div>
+        </main>
+        
+        <nav class="bottom-nav">
+            <a href="#" class="nav-item active" data-page="dashboard">
+                <i class="fas fa-home"></i>
+                <span>首頁</span>
+            </a>
+            <a href="#" class="nav-item" data-page="attendance">
+                <i class="fas fa-clock"></i>
+                <span>打卡</span>
+            </a>
+            <a href="#" class="nav-item" data-page="profile">
+                <i class="fas fa-user"></i>
+                <span>我的</span>
+            </a>
+            <a href="#" class="nav-item" data-page="settings">
+                <i class="fas fa-cog"></i>
+                <span>設定</span>
+            </a>
+        </nav>
+    </div>
+    
+    <!-- 安裝提示 -->
+    <div class="install-prompt" id="installPrompt">
+        <div class="install-content">
+            <i class="fas fa-download"></i>
+            <h3>安裝員工管理系統</h3>
+            <p>安裝到主畫面，快速訪問應用程式</p>
+            <div class="install-buttons">
+                <button id="installBtn">安裝</button>
+                <button id="cancelInstall">稍後</button>
+            </div>
+        </div>
+    </div>
+    
     <script src="app.js"></script>
-    <script src="dashboard.js"></script>
-    <script>
-        // 註冊 Service Worker
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/service-worker.js')
-                .then(reg => console.log('Service Worker 已註冊:', reg.scope))
-                .catch(err => console.log('Service Worker 註冊失敗:', err));
-        }
-    </script>
 </body>
 </html>
