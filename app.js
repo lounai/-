@@ -26,26 +26,32 @@ class EmployeeSystem {
     }
 
     async initSupabase() {
-        // 使用你的 Supabase URL 和金鑰
+    try {
         const SUPABASE_URL = 'https://kzwtsgetozekwpidtlgs.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_tRTUjXZtrmR_dJlL5q0I0g_EYnN0AtH';
         
-        this.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        // 新建立的 secret key
+        const SECRET_KEY = 'sb_secret_Arh3mnNJNzbooD1vXdoWEg_97lZX19-'; // 替換為您的新金鑰
+        
+        this.supabase = supabase.createClient(SUPABASE_URL, SECRET_KEY, {
+            auth: {
+                persistSession: false,
+                autoRefreshToken: false
+            },
+            global: {
+                headers: {
+                    'apikey': SECRET_KEY,
+                    'Authorization': `Bearer ${SECRET_KEY}`
+                }
+            }
+        });
+        
+        console.log('✅ Supabase 初始化完成（使用 Secret key）');
+        
+    } catch (error) {
+        console.error('❌ Supabase 初始化失敗:', error);
+        throw error;
     }
-
-    initPWA() {
-        // 註冊 Service Worker
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/service-worker.js')
-                    .then(registration => {
-                        console.log('Service Worker 註冊成功:', registration.scope);
-                    })
-                    .catch(error => {
-                        console.log('Service Worker 註冊失敗:', error);
-                    });
-            });
-        }
+}
 
         // 安裝提示
         let deferredPrompt;
