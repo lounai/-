@@ -185,6 +185,7 @@ class EmployeeSystem {
    // 在 app.js 的 handleLogin 方法中，修改查詢語法
 // 修改 handleLogin 方法，使用直接查詢
 // 完全替換 handleLogin 方法
+// 找到您的 handleLogin 方法，完全替換為這個版本：
 async handleLogin() {
     const employeeId = document.getElementById('employeeId').value.trim();
     const password = document.getElementById('password').value;
@@ -206,13 +207,13 @@ async handleLogin() {
     try {
         console.log(`🔑 嘗試登入: ${employeeId}`);
         
-        // 方法1：直接查詢員工表（不使用 RPC）
+        // 完全不要使用 RPC 函數！使用直接查詢
         const { data, error } = await this.supabase
-    .from('員工表')
-    .select('*')
-    .eq('員工編號', employeeId)
-    .eq('在職狀態', 'active')
-    .maybeSingle();
+            .from('員工表')
+            .select('*')
+            .eq('員工編號', employeeId)
+            .eq('在職狀態', 'active')
+            .maybeSingle();
 
         if (error) {
             console.error('查詢錯誤:', error);
@@ -220,40 +221,21 @@ async handleLogin() {
             return;
         }
 
-        // 如果沒找到，嘗試用登入帳號查詢
         if (!data) {
-            console.log('用員工編號沒找到，嘗試用登入帳號查詢...');
-            const { data: altData, error: altError } = await this.supabase
-                .from('員工表')
-                .select('*')
-                .eq('登入帳號', employeeId)
-                .eq('在職狀態', 'active')
-                .maybeSingle();
-                
-            if (altError) {
-                console.error('替代查詢錯誤:', altError);
-                this.showToast('系統錯誤', 'error');
-                return;
-            }
-            
-            if (altData) {
-                data = altData;
-                console.log('用登入帳號找到員工:', data);
-            } else {
-                this.showToast('員工編號或密碼錯誤', 'error');
-                return;
-            }
+            console.log('找不到員工或帳號已停用');
+            this.showToast('員工編號或密碼錯誤', 'error');
+            return;
         }
 
-        console.log('找到員工資料:', data);
+        console.log('找到員工:', data);
         
-        // 簡化密碼檢查
-        const passwordValid = this.checkPassword(password, data.密碼雜湊);
+        // 簡單密碼檢查
+        const validPassword = this.checkPassword(password, data.密碼雜湊);
         
-        if (passwordValid) {
-            console.log('✅ 密碼驗證通過');
+        if (validPassword) {
+            console.log('✅ 密碼驗證成功');
             
-            // 登入成功，建立使用者物件
+            // 登入成功
             this.currentUser = {
                 id: data.id,
                 員工編號: data.員工編號,
@@ -262,29 +244,27 @@ async handleLogin() {
                 電話: data.電話,
                 生日: data.生日,
                 入職日期: data.入職日期,
-                職位id: data.職位id,
-                在職狀態: data.在職狀態,
-                登入帳號: data.登入帳號
+                職位id: data.職位id || 1,
+                在職狀態: data.在職狀態
             };
             
-            // 嘗試獲取職位名稱
+            // 獲取職位名稱
             if (data.職位id) {
                 try {
                     const { data: positionData } = await this.supabase
                         .from('職位表')
                         .select('職位名稱')
                         .eq('id', data.職位id)
-                        .single();
+                        .maybeSingle();
                         
                     if (positionData) {
                         this.currentUser.職位名稱 = positionData.職位名稱;
                     }
                 } catch (e) {
-                    console.log('無法獲取職位資訊，使用預設:', e);
+                    console.log('無法獲取職位資訊:', e);
                 }
             }
             
-            // 如果沒有職位名稱，使用預設
             if (!this.currentUser.職位名稱) {
                 this.currentUser.職位名稱 = this.getDefaultPosition(data.職位id);
             }
@@ -308,23 +288,13 @@ async handleLogin() {
 
             this.showToast(`歡迎回來，${this.currentUser.姓名}！`, 'success');
             this.showDashboard();
-            
         } else {
             console.log('❌ 密碼驗證失敗');
-            
-            // 增加登入失敗次數
-            await this.supabase
-                .from('員工表')
-                .update({ 
-                    登入失敗次數: (data.登入失敗次數 || 0) + 1
-                })
-                .eq('id', data.id);
-                
             this.showToast('密碼錯誤', 'error');
         }
         
     } catch (error) {
-        console.error('登入過程錯誤:', error);
+        console.error('登入錯誤:', error);
         this.showToast('登入失敗: ' + error.message, 'error');
     } finally {
         // 恢復按鈕狀態
@@ -335,32 +305,29 @@ async handleLogin() {
     }
 }
 
-// 簡單密碼檢查
+// 確保這個方法存在
 checkPassword(inputPassword, storedHash) {
     console.log('檢查密碼:', { inputPassword, storedHash });
     
-    // 情況1：輸入的是預設密碼
+    // 1. 預設密碼
     if (inputPassword === '123456') {
-        console.log('✅ 使用預設密碼 123456');
+        console.log('✅ 使用預設密碼');
         return true;
     }
     
-    // 情況2：沒有存儲密碼
+    // 2. 無密碼設定
     if (!storedHash || storedHash.trim() === '') {
         console.log('✅ 無密碼設定，允許登入');
         return true;
     }
     
-    // 情況3：密碼直接匹配（明文存儲）
+    // 3. 密碼直接匹配
     if (storedHash === inputPassword) {
         console.log('✅ 密碼直接匹配');
         return true;
     }
     
-    // 情況4：嘗試 bcrypt 驗證（如果有需要）
-    // 這裡可以添加 bcrypt 驗證邏輯
-    
-    console.log('❌ 所有密碼檢查都失敗');
+    console.log('❌ 密碼驗證失敗');
     return false;
 }
 
