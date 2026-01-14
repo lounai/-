@@ -4,6 +4,36 @@ class EmployeeSystem {
         this.currentUser = null;
         this.supabase = null;
         this.init();
+        getSettingsContent() {
+    return `
+        <div class="settings">
+            <h3>系統設定</h3>
+            <div class="setting-item">
+                <label>通知設定</label>
+                <input type="checkbox" id="notifications" checked>
+            </div>
+            <div class="setting-item">
+                <label>深色模式</label>
+                <input type="checkbox" id="darkMode">
+            </div>
+            <button class="btn-primary" id="saveSettings">
+                儲存設定
+            </button>
+        </div>
+    `;
+}
+
+getProjectsContent() {
+    return '<div class="projects"><h3>專案管理</h3><p>功能開發中</p></div>';
+}
+
+getFinanceContent() {
+    return '<div class="finance"><h3>財務報表</h3><p>需要財務權限</p></div>';
+}
+
+getEmployeesContent() {
+    return '<div class="employees"><h3>員工管理</h3><p>需要管理員權限</p></div>';
+}
     }
 
     async init() {
