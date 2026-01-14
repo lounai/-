@@ -182,110 +182,99 @@ class EmployeeSystem {
         window.addEventListener('offline', () => this.showToast('網路已斷開', 'warning'));
     }
 
-    async handleLogin() {
-        const employeeId = document.getElementById('employeeId').value.trim();
-        const password = document.getElementById('password').value;
-        const rememberMe = document.getElementById('rememberMe').checked;
+   // 在 app.js 的 handleLogin 方法中，修改查詢語法
+async handleLogin() {
+    const employeeId = document.getElementById('employeeId').value.trim();
+    const password = document.getElementById('password').value;
+    const rememberMe = document.getElementById('rememberMe').checked;
 
-        if (!employeeId || !password) {
-            this.showToast('請輸入員工編號和密碼', 'error');
+    if (!employeeId || !password) {
+        this.showToast('請輸入員工編號和密碼', 'error');
+        return;
+    }
+
+    // 顯示載入中
+    const loginBtn = document.querySelector('#loginForm .btn-primary');
+    if (!loginBtn) return;
+    
+    const originalText = loginBtn.innerHTML;
+    loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 登入中...';
+    loginBtn.disabled = true;
+
+    try {
+        console.log(`🔑 嘗試登入: ${employeeId}`);
+        
+        // 正確的 Supabase 查詢語法
+        const { data, error } = await this.supabase
+            .from('員工表')
+            .select('*')
+            .or(`員工編號.eq.${employeeId},登入帳號.eq.${employeeId},電子郵件.eq.${employeeId}`)
+            .eq('在職狀態', 'active')
+            .maybeSingle();  // 使用 maybeSingle 而不是 single，避免找不到時報錯
+
+        if (error) {
+            console.error('查詢錯誤:', error);
+            this.showToast('系統錯誤，請稍後再試', 'error');
             return;
         }
 
-        // 顯示載入中
-        const loginBtn = document.querySelector('#loginForm .btn-primary');
-        if (!loginBtn) return;
+        if (!data) {
+            console.log('找不到員工或帳號已停用');
+            this.showToast('員工編號或密碼錯誤', 'error');
+            return;
+        }
+
+        console.log('找到員工:', data);
         
-        const originalText = loginBtn.innerHTML;
-        loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 登入中...';
-        loginBtn.disabled = true;
-
-        try {
-            console.log(`🔑 嘗試登入: ${employeeId}`);
+        // 密碼檢查
+        const validPassword = this.validatePassword(password, data.密碼雜湊);
+        
+        if (validPassword) {
+            // 登入成功
+            this.currentUser = {
+                id: data.id,
+                員工編號: data.員工編號,
+                姓名: data.姓名,
+                電子郵件: data.電子郵件,
+                電話: data.電話,
+                生日: data.生日 ? new Date(data.生日).toLocaleDateString('zh-TW') : '',
+                入職日期: data.入職日期 ? new Date(data.入職日期).toLocaleDateString('zh-TW') : '',
+                職位id: data.職位id || 1,
+                在職狀態: data.在職狀態
+            };
             
-            // 查詢員工資料（使用您表中的欄位）
-            const { data, error } = await this.supabase
+            if (rememberMe) {
+                localStorage.setItem('employee_user', JSON.stringify({
+                    員工編號: this.currentUser.員工編號,
+                    姓名: this.currentUser.姓名
+                }));
+            }
+
+            // 更新最後登入時間
+            await this.supabase
                 .from('員工表')
-                .select('*')
-                .or(`員工編號.eq.${employeeId},登入帳號.eq.${employeeId},電子郵件.eq.${employeeId}`)
-                .eq('在職狀態', 'active')
-                .single();
+                .update({ 
+                    最後登入時間: new Date().toISOString()
+                })
+                .eq('id', data.id);
 
-            if (error || !data) {
-                console.error('找不到員工:', error);
-                this.showToast('員工編號或密碼錯誤', 'error');
-                return;
-            }
-
-            console.log('找到員工:', data);
-            
-            // 密碼檢查（根據您的資料表結構）
-            // 暫時假設密碼是 '123456' 或直接比對密碼雜湊
-            const validPassword = this.validatePassword(password, data.密碼雜湊);
-            
-            if (validPassword) {
-                // 獲取職位和部門資訊
-                const positionName = await this.getPositionName(data.職位id);
-                const departmentName = await this.getDepartmentName(data.職位id);
-                
-                this.currentUser = {
-                    id: data.id,
-                    員工編號: data.員工編號,
-                    姓名: data.姓名,
-                    電子郵件: data.電子郵件,
-                    電話: data.電話,
-                    生日: data.生日 ? new Date(data.生日).toLocaleDateString('zh-TW') : '',
-                    入職日期: data.入職日期 ? new Date(data.入職日期).toLocaleDateString('zh-TW') : '',
-                    職位id: data.職位id || 1,
-                    職位名稱: positionName,
-                    部門: departmentName,
-                    在職狀態: data.在職狀態
-                };
-                
-                if (rememberMe) {
-                    localStorage.setItem('employee_user', JSON.stringify({
-                        員工編號: this.currentUser.員工編號,
-                        姓名: this.currentUser.姓名
-                    }));
-                }
-
-                // 更新最後登入時間
-                await this.supabase
-                    .from('員工表')
-                    .update({ 
-                        最後登入時間: new Date().toISOString(),
-                        登入失敗次數: 0,
-                        帳號鎖定: false,
-                        鎖定時間: null
-                    })
-                    .eq('id', data.id);
-
-                this.showToast('登入成功！', 'success');
-                this.showDashboard();
-            } else {
-                // 增加登入失敗次數
-                await this.supabase
-                    .from('員工表')
-                    .update({ 
-                        登入失敗次數: (data.登入失敗次數 || 0) + 1,
-                        最後登入時間: new Date().toISOString()
-                    })
-                    .eq('id', data.id);
-                
-                this.showToast('密碼錯誤', 'error');
-            }
-            
-        } catch (error) {
-            console.error('登入錯誤:', error);
-            this.showToast('登入失敗: ' + error.message, 'error');
-        } finally {
-            // 恢復按鈕狀態
-            if (loginBtn) {
-                loginBtn.innerHTML = originalText;
-                loginBtn.disabled = false;
-            }
+            this.showToast('登入成功！', 'success');
+            this.showDashboard();
+        } else {
+            this.showToast('密碼錯誤', 'error');
+        }
+        
+    } catch (error) {
+        console.error('登入錯誤:', error);
+        this.showToast('登入失敗: ' + error.message, 'error');
+    } finally {
+        // 恢復按鈕狀態
+        if (loginBtn) {
+            loginBtn.innerHTML = originalText;
+            loginBtn.disabled = false;
         }
     }
+}
 
     validatePassword(inputPassword, storedHash) {
         // 簡單的密碼驗證邏輯
