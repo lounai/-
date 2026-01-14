@@ -3,25 +3,25 @@ class EmployeeSystem {
     constructor() {
         this.currentUser = null;
         this.supabase = null;
-        this.init();
-        getSettingsContent() {
-    return `
-        <div class="settings">
-            <h3>系統設定</h3>
-            <div class="setting-item">
-                <label>通知設定</label>
-                <input type="checkbox" id="notifications" checked>
-            </div>
-            <div class="setting-item">
-                <label>深色模式</label>
-                <input type="checkbox" id="darkMode">
-            </div>
-            <button class="btn-primary" id="saveSettings">
-                儲存設定
-            </button>
-        </div>
-    `;
-}
+        this.init();  // ✅ 只有初始化，不放方法定義
+    }
+    
+    // 方法應該在 constructor 外面，class 裡面
+    getSettingsContent() {  // ✅ 正確：在 class 中定義方法
+        return `...`;
+    }
+    
+    getProjectsContent() {
+        return `...`;
+    }
+    
+    getFinanceContent() {
+        return `...`;
+    }
+    
+    getEmployeesContent() {
+        return `...`;
+    }
 
 getProjectsContent() {
     return '<div class="projects"><h3>專案管理</h3><p>功能開發中</p></div>';
