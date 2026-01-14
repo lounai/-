@@ -1,40 +1,30 @@
 // service-worker.js
+// service-worker.js
 const CACHE_NAME = 'employee-system-v1';
 const urlsToCache = [
   '/',
   '/index.html',
-  '/style.css', 
   '/app.js',
-  '/manifest.json'
+  '/manifest.json',
+  '/icons/favicon.ico',
+  '/icons/favicon.svg',
+  '/icons/icon-96x96.png',
+  '/icons/icon-180x180.png',
+  '/icons/icon-192x192.png',
+  '/icons/icon-512x512.png'
+  // 移除 '/icons/icon-72x72.png' 因為它不存在
 ];
 
-// 安裝 Service Worker
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
         console.log('Cache opened');
-        // 改用逐一加入，避免 addAll 失敗
-        return Promise.all(
-          urlsToCache.map(url => {
-            return fetch(url)
-              .then(response => {
-                if (!response.ok) {
-                  throw new Error(`Failed to fetch ${url}: ${response.status}`);
-                }
-                return cache.put(url, response);
-              })
-              .catch(error => {
-                console.warn(`Could not cache ${url}:`, error);
-              });
-          })
-        );
+        return cache.addAll(urlsToCache);
       })
       .then(() => {
         console.log('All resources cached');
-      })
-      .catch(error => {
-        console.error('Cache failed:', error);
+        return self.skipWaiting();
       })
   );
 });
