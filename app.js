@@ -155,38 +155,79 @@ class EmployeeSystem {
         window.addEventListener('offline', () => this.showToast('網路已斷開', 'warning'));
 
         // 禁止右鍵選單（選用）
-        document.addEventListener('contextmenu', (e) => {
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-            e.preventDefault();
-        });
+        // app.js 或 dashboard.js
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        // 獲取使用者資料
+        const userData = await getUserData();
+        
+        // 更新歡迎訊息
+        updateWelcomeMessage(userData);
+        
+        // 更新員工資訊
+        updateEmployeeInfo(userData);
+        
+        // 載入其他資料
+        loadDashboardData();
+        
+    } catch (error) {
+        console.error('載入失敗:', error);
+        showErrorMessage('無法載入資料，請重新整理頁面');
     }
+});
 
-    async checkAuth() {
-        try {
-            const savedUser = localStorage.getItem('employee_user');
-            if (savedUser) {
-                const user = JSON.parse(savedUser);
-                const { data, error } = await this.supabase
-                    .rpc('驗證員工登入', {
-                        輸入帳號: user.員工編號,
-                        輸入密碼: 'dummy' // 實際應該檢查 token
-                    });
-                
-                if (!error && data && data[0]?.登入成功) {
-                    this.currentUser = {
-                        ...user,
-                        ...data[0]
-                    };
-                    this.showDashboard();
-                } else {
-                    localStorage.removeItem('employee_user');
-                }
+// 獲取使用者資料
+async function getUserData() {
+    // 從 localStorage 或 API 獲取資料
+    const user = localStorage.getItem('currentUser');
+    
+    if (user) {
+        return JSON.parse(user);
+    } else {
+        // 如果沒有儲存的資料，從 API 獲取
+        const response = await fetch('/api/user/me', {
+            headers: {
+                'Authorization': `Bearer ${getToken()}`
             }
-        } catch (error) {
-            console.error('檢查認證失敗:', error);
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            localStorage.setItem('currentUser', JSON.stringify(data));
+            return data;
+        } else {
+            throw new Error('無法獲取使用者資料');
         }
     }
+}
 
+// 更新歡迎訊息
+function updateWelcomeMessage(userData) {
+    const welcomeElement = document.querySelector('.welcome-message');
+    if (welcomeElement) {
+        const today = new Date();
+        const dateStr = `${today.getFullYear()}/${today.getMonth() + 1}/${today.getDate()}`;
+        
+        welcomeElement.innerHTML = `
+            歡迎回來，<strong>${userData.name || '使用者'}</strong>！<br>
+            今天是 ${dateStr}
+        `;
+    }
+}
+
+// 更新員工資訊
+function updateEmployeeInfo(userData) {
+    const employeeInfo = document.querySelector('.employee-info');
+    if (employeeInfo) {
+        employeeInfo.innerHTML = `
+            <h3>個人資訊</h3>
+            <p><strong>員工編號：</strong>${userData.employeeId || 'N/A'}</p>
+            <p><strong>部門：</strong>${userData.department || 'N/A'}</p>
+            <p><strong>職位：</strong>${userData.position || 'N/A'}</p>
+            <p><strong>到職日：</strong>${formatDate(userData.joinDate) || 'N/A'}</p>
+        `;
+    }
+}
     async handleLogin() {
         const employeeId = document.getElementById('employeeId').value.trim();
         const password = document.getElementById('password').value;
