@@ -144,21 +144,24 @@ class EmployeeSystem {
         }
 
         // 底部導航
-        document.querySelectorAll('.nav-item').forEach(item => {
-            item.addEventListener('click', (e) => {
-                e.preventDefault();
-                const page = item.dataset.page;
-                this.loadPage(page);
-                
-                // 更新活動狀態
-                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-                item.classList.add('active');
-                
-                // 關閉側邊欄（手機）
-                const sidebar = document.getElementById('sidebar');
-                if (sidebar) sidebar.classList.remove('active');
-            });
+        document.querySelectorAll('.menu li').forEach(item => {
+        item.addEventListener('click', (e) => {
+            e.preventDefault();
+            const page = item.dataset.page;
+            // 使用 window.employeeSystem 而不是 this
+            if (window.employeeSystem && window.employeeSystem.loadPage) {
+                window.employeeSystem.loadPage(page);
+            }
+            
+            // 更新活動狀態
+            document.querySelectorAll('.menu li').forEach(i => i.classList.remove('active'));
+            item.classList.add('active');
+            
+            // 關閉側邊欄（手機）
+            const sidebar = document.getElementById('sidebar');
+            if (sidebar) sidebar.classList.remove('active');
         });
+    });
 
         // 側邊欄菜單項目
         document.querySelectorAll('.menu li').forEach(item => {
