@@ -208,11 +208,11 @@ async handleLogin() {
         
         // 方法1：直接查詢員工表（不使用 RPC）
         const { data, error } = await this.supabase
-            .from('員工表')
-            .select('*')
-            .eq('員工編號', employeeId)
-            .eq('在職狀態', 'active')
-            .maybeSingle();
+    .from('員工表')
+    .select('*')
+    .eq('員工編號', employeeId)
+    .eq('在職狀態', 'active')
+    .maybeSingle();
 
         if (error) {
             console.error('查詢錯誤:', error);
