@@ -3,39 +3,9 @@ class EmployeeSystem {
     constructor() {
         this.currentUser = null;
         this.supabase = null;
-        this.init();  // ✅ 只有初始化，不放方法定義
+        this.init();
     }
     
-    // 方法應該在 constructor 外面，class 裡面
-    getSettingsContent() {  // ✅ 正確：在 class 中定義方法
-        return `...`;
-    }
-    
-    getProjectsContent() {
-        return `...`;
-    }
-    
-    getFinanceContent() {
-        return `...`;
-    }
-    
-    getEmployeesContent() {
-        return `...`;
-    }
-
-getProjectsContent() {
-    return '<div class="projects"><h3>專案管理</h3><p>功能開發中</p></div>';
-}
-
-getFinanceContent() {
-    return '<div class="finance"><h3>財務報表</h3><p>需要財務權限</p></div>';
-}
-
-getEmployeesContent() {
-    return '<div class="employees"><h3>員工管理</h3><p>需要管理員權限</p></div>';
-}
-    }
-
     async init() {
         try {
             console.log('🚀 員工管理系統啟動...');
@@ -212,124 +182,119 @@ getEmployeesContent() {
         window.addEventListener('offline', () => this.showToast('網路已斷開', 'warning'));
     }
 
-   // 在 app.js 的 handleLogin 方法中，修改查詢語法
-// 修改 handleLogin 方法，使用直接查詢
-// 完全替換 handleLogin 方法
-// 找到您的 handleLogin 方法，完全替換為這個版本：
-async handleLogin() {
-    const employeeId = document.getElementById('employeeId').value.trim();
-    const password = document.getElementById('password').value;
-    const rememberMe = document.getElementById('rememberMe').checked;
+    async handleLogin() {
+        const employeeId = document.getElementById('employeeId').value.trim();
+        const password = document.getElementById('password').value;
+        const rememberMe = document.getElementById('rememberMe').checked;
 
-     if (!employeeId || !password) {
-        this.showToast('請輸入員工編號和密碼', 'error');
-        return;
-    }
-
-    const loginBtn = document.querySelector('#loginForm .btn-primary');
-    if (!loginBtn) return;
-    
-    const originalText = loginBtn.innerHTML;
-    loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 登入中...';
-    loginBtn.disabled = true;
-
-    try {
-        console.log(`登入: ${employeeId}`);
-        
-        // 直接查詢，不使用 RPC
-        const { data, error } = await this.supabase
-            .from('員工表')
-            .select('*')
-            .eq('員工編號', employeeId)
-            .eq('在職狀態', 'active')
-            .maybeSingle();
-
-        if (error || !data) {
-            this.showToast('員工編號或密碼錯誤', 'error');
+         if (!employeeId || !password) {
+            this.showToast('請輸入員工編號和密碼', 'error');
             return;
         }
 
-        // 簡單密碼檢查
-        const validPassword = password === '123456' || 
-                             !data.密碼雜湊 || 
-                             data.密碼雜湊 === password;
+        const loginBtn = document.querySelector('#loginForm .btn-primary');
+        if (!loginBtn) return;
+        
+        const originalText = loginBtn.innerHTML;
+        loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 登入中...';
+        loginBtn.disabled = true;
 
-        if (validPassword) {
-            this.currentUser = {
-                id: data.id,
-                員工編號: data.員工編號,
-                姓名: data.姓名,
-                電子郵件: data.電子郵件,
-                電話: data.電話,
-                生日: data.生日,
-                入職日期: data.入職日期,
-                職位id: data.職位id || 1,
-                在職狀態: data.在職狀態,
-                職位名稱: '員工'
-            };
+        try {
+            console.log(`登入: ${employeeId}`);
             
-            if (rememberMe) {
-                localStorage.setItem('employee_user', JSON.stringify({
-                    員工編號: this.currentUser.員工編號,
-                    姓名: this.currentUser.姓名
-                }));
+            // 直接查詢，不使用 RPC
+            const { data, error } = await this.supabase
+                .from('員工表')
+                .select('*')
+                .eq('員工編號', employeeId)
+                .eq('在職狀態', 'active')
+                .maybeSingle();
+
+            if (error || !data) {
+                this.showToast('員工編號或密碼錯誤', 'error');
+                return;
             }
 
-            this.showToast(`歡迎 ${data.姓名}！`, 'success');
-            this.showDashboard();
-        } else {
-            this.showToast('密碼錯誤', 'error');
+            // 簡單密碼檢查
+            const validPassword = password === '123456' || 
+                                 !data.密碼雜湊 || 
+                                 data.密碼雜湊 === password;
+
+            if (validPassword) {
+                this.currentUser = {
+                    id: data.id,
+                    員工編號: data.員工編號,
+                    姓名: data.姓名,
+                    電子郵件: data.電子郵件,
+                    電話: data.電話,
+                    生日: data.生日,
+                    入職日期: data.入職日期,
+                    職位id: data.職位id || 1,
+                    在職狀態: data.在職狀態,
+                    職位名稱: '員工'
+                };
+                
+                if (rememberMe) {
+                    localStorage.setItem('employee_user', JSON.stringify({
+                        員工編號: this.currentUser.員工編號,
+                        姓名: this.currentUser.姓名
+                    }));
+                }
+
+                this.showToast(`歡迎 ${data.姓名}！`, 'success');
+                this.showDashboard();
+            } else {
+                this.showToast('密碼錯誤', 'error');
+            }
+            
+        } catch (error) {
+            console.error('登入錯誤:', error);
+            this.showToast('系統錯誤', 'error');
+        } finally {
+            if (loginBtn) {
+                loginBtn.innerHTML = originalText;
+                loginBtn.disabled = false;
+            }
+        }
+    }
+
+    checkPassword(inputPassword, storedHash) {
+        console.log('檢查密碼:', { inputPassword, storedHash });
+        
+        // 1. 預設密碼
+        if (inputPassword === '123456') {
+            console.log('✅ 使用預設密碼');
+            return true;
         }
         
-    } catch (error) {
-        console.error('登入錯誤:', error);
-        this.showToast('系統錯誤', 'error');
-    } finally {
-        if (loginBtn) {
-            loginBtn.innerHTML = originalText;
-            loginBtn.disabled = false;
+        // 2. 無密碼設定
+        if (!storedHash || storedHash.trim() === '') {
+            console.log('✅ 無密碼設定，允許登入');
+            return true;
         }
+        
+        // 3. 密碼直接匹配
+        if (storedHash === inputPassword) {
+            console.log('✅ 密碼直接匹配');
+            return true;
+        }
+        
+        console.log('❌ 密碼驗證失敗');
+        return false;
     }
-}
 
-// 確保這個方法存在
-checkPassword(inputPassword, storedHash) {
-    console.log('檢查密碼:', { inputPassword, storedHash });
-    
-    // 1. 預設密碼
-    if (inputPassword === '123456') {
-        console.log('✅ 使用預設密碼');
-        return true;
+    // 預設職位對應
+    getDefaultPosition(positionId) {
+        const positionMap = {
+            1: '管理員',
+            2: '經理',
+            3: '會計',
+            4: '助理',
+            5: '施工員',
+            6: '工程師'
+        };
+        return positionMap[positionId] || '員工';
     }
-    
-    // 2. 無密碼設定
-    if (!storedHash || storedHash.trim() === '') {
-        console.log('✅ 無密碼設定，允許登入');
-        return true;
-    }
-    
-    // 3. 密碼直接匹配
-    if (storedHash === inputPassword) {
-        console.log('✅ 密碼直接匹配');
-        return true;
-    }
-    
-    console.log('❌ 密碼驗證失敗');
-    return false;
-}
-
-// 預設職位對應
-getDefaultPosition(positionId) {
-    const positionMap = {
-        1: '管理員',
-        2: '經理',
-        3: '會計',
-        4: '助理',
-        5: '施工員',
-        6: '工程師'
-    };
-    return positionMap[positionId] || '員工';
-}
 
     validatePassword(inputPassword, storedHash) {
         // 簡單的密碼驗證邏輯
@@ -343,10 +308,7 @@ getDefaultPosition(positionId) {
             return true;
         }
         
-        // 3. 這裡可以添加 bcrypt 驗證（未來擴展）
-        // return bcrypt.compareSync(inputPassword, storedHash);
-        
-        // 暫時接受 '123456' 或直接比對
+        // 3. 暫時接受 '123456' 或直接比對
         return inputPassword === '123456' || inputPassword === storedHash;
     }
 
@@ -507,22 +469,22 @@ getDefaultPosition(positionId) {
                     
                 case 'settings':
                     title = '設定';
-                    content = await this.getSettingsContent();
+                    content = this.getSettingsContent();
                     break;
                     
                 case 'projects':
                     title = '專案管理';
-                    content = await this.getProjectsContent();
+                    content = this.getProjectsContent();
                     break;
                     
                 case 'finance':
                     title = '財務報表';
-                    content = await this.getFinanceContent();
+                    content = this.getFinanceContent();
                     break;
                     
                 case 'employees':
                     title = '員工管理';
-                    content = await this.getEmployeesContent();
+                    content = this.getEmployeesContent();
                     break;
                     
                 default:
@@ -550,7 +512,8 @@ getDefaultPosition(positionId) {
         }
     }
 
-    // 以下是各頁面的內容方法
+    // ========== 各頁面的內容方法 ==========
+    
     async getDashboardContent() {
         try {
             // 獲取統計資料
@@ -722,7 +685,7 @@ getDefaultPosition(positionId) {
                             <h4>--:--</h4>
                         </div>
                         <div class="clock-out">
-                            <p>下班時間</p>
+                            <p>下班時間</h4>
                             <h4>--:--</h4>
                         </div>
                     </div>
