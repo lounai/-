@@ -3,12 +3,9 @@ const CACHE_NAME = 'employee-system-v1';
 const urlsToCache = [
   '/',
   '/index.html',
-  '/dashboard.html',
-  '/style.css',
+  '/style.css', 
   '/app.js',
-  '/manifest.json',
-  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
-  'https://unpkg.com/@supabase/supabase-js@2'
+  '/manifest.json'
 ];
 
 // 安裝 Service Worker
@@ -17,7 +14,27 @@ self.addEventListener('install', event => {
     caches.open(CACHE_NAME)
       .then(cache => {
         console.log('Cache opened');
-        return cache.addAll(urlsToCache);
+        // 改用逐一加入，避免 addAll 失敗
+        return Promise.all(
+          urlsToCache.map(url => {
+            return fetch(url)
+              .then(response => {
+                if (!response.ok) {
+                  throw new Error(`Failed to fetch ${url}: ${response.status}`);
+                }
+                return cache.put(url, response);
+              })
+              .catch(error => {
+                console.warn(`Could not cache ${url}:`, error);
+              });
+          })
+        );
+      })
+      .then(() => {
+        console.log('All resources cached');
+      })
+      .catch(error => {
+        console.error('Cache failed:', error);
       })
   );
 });
@@ -37,20 +54,26 @@ self.addEventListener('activate', event => {
   );
 });
 
-// 攔截請求
+// 攔截請求 - 更穩定的版本
 self.addEventListener('fetch', event => {
-  // 跳過 Supabase API 請求
-  if (event.request.url.includes('supabase.co')) {
+  // 跳過 Supabase 和外部資源請求
+  if (event.request.url.includes('supabase.co') || 
+      event.request.url.includes('cdnjs.cloudflare.com') ||
+      event.request.url.includes('unpkg.com')) {
     return;
   }
   
   event.respondWith(
     caches.match(event.request)
       .then(response => {
-        if (response) {
-          return response;
+        // 返回快取或網路請求
+        return response || fetch(event.request);
+      })
+      .catch(() => {
+        // 如果都失敗，返回離線頁面
+        if (event.request.mode === 'navigate') {
+          return caches.match('/index.html');
         }
-        return fetch(event.request);
       })
   );
 });
